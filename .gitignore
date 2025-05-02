@@ -9,4 +9,5 @@ research
 .config
 .config.old
 etc/conf/vendor/*
+combined-firmware.bin
 
