@@ -58,6 +58,14 @@ extern "C" {
 
 #include "mavesp8266_config.h"
 
+#if MAVESP8266_IS_ESP32 && defined(ARDUINO_USB_CDC_ON_BOOT) && ARDUINO_USB_CDC_ON_BOOT
+#  define MAVESP8266_USE_USB_CDC_CONSOLE 1
+#  define MAVESP8266_VEHICLE_SERIAL Serial0
+#else
+#  define MAVESP8266_USE_USB_CDC_CONSOLE 0
+#  define MAVESP8266_VEHICLE_SERIAL Serial
+#endif
+
 class MavESP8266Parameters;
 class MavESP8266Component;
 class MavESP8266Vehicle;

@@ -60,7 +60,13 @@ MavESP8266Vehicle::begin(MavESP8266Bridge* forwardTo, IPAddress ownIP, uint8_t s
 
     MavESP8266Bridge::begin(forwardTo);
     //-- Start UART connected to UAS
-    Serial.begin(getWorld()->getParameters()->getUartBaudRate());
+    #ifdef ENABLE_DEBUG
+    #if MAVESP8266_USE_USB_CDC_CONSOLE
+        MAVESP8266_VEHICLE_SERIAL.begin(getWorld()->getParameters()->getUartBaudRate());
+    #endif
+    #else
+        MAVESP8266_VEHICLE_SERIAL.begin(getWorld()->getParameters()->getUartBaudRate());
+    #endif
     //-- Swap to TXD2/RXD2 (GPIO015/GPIO013) For ESP12 Only
 #ifdef ENABLE_DEBUG
 #ifdef ARDUINO_ESP8266_ESP12
@@ -68,7 +74,7 @@ MavESP8266Vehicle::begin(MavESP8266Bridge* forwardTo, IPAddress ownIP, uint8_t s
 #endif
 #endif
     // raise serial buffer size (default is 256)
-    Serial.setRxBufferSize(4096);
+    // Serial.setRxBufferSize(4096);
 }
 
 
@@ -101,9 +107,9 @@ MavESP8266Vehicle::readMessageRaw() {
     static uint8_t buf[1024];
     int buf_index = 0;
 
-    while(Serial.available() && buf_index < 300)
+    while(MAVESP8266_VEHICLE_SERIAL.available() && buf_index < 300)
     {
-        int result = Serial.read();
+        int result = MAVESP8266_VEHICLE_SERIAL.read();
         if (result >= 0)
         {
             buf[buf_index] = result;
@@ -124,18 +130,18 @@ MavESP8266Vehicle::sendMessage(mavlink_message_t* message) {
     char buf[300];
     unsigned len = mavlink_msg_to_send_buffer((uint8_t*)buf, message);
     // Send it
-    while (Serial.availableForWrite() < 32) {
+    while (MAVESP8266_VEHICLE_SERIAL.availableForWrite() < 32) {
         // don't spin in the send loop, wait for 25% of the FIFO to be free
         delay(1);
     }
-    Serial.write((uint8_t*)(void*)buf, len);
+    MAVESP8266_VEHICLE_SERIAL.write((uint8_t*)(void*)buf, len);
     _status.packets_sent++;
     return 1;
 }
 
 int
 MavESP8266Vehicle::sendMessageRaw(uint8_t *buffer, int len) {
-    Serial.write(buffer, len);
+    MAVESP8266_VEHICLE_SERIAL.write(buffer, len);
     //Serial.flush();
     return len;
 }
@@ -163,7 +169,7 @@ bool
 MavESP8266Vehicle::_readMessage()
 {
     uint8_t msgReceived = MAVLINK_FRAMING_INCOMPLETE;
-    int16_t avail = Serial.available();
+    int16_t avail = MAVESP8266_VEHICLE_SERIAL.available();
     if (avail <= 0 && _non_mavlink_len != 0 && _rxstatus.parse_state <= MAVLINK_PARSE_STATE_IDLE) {
         // flush out the non-mavlink buffer when there is nothing pending. This
         // allows us to gather non-mavlink msgs into a single write
@@ -172,7 +178,7 @@ MavESP8266Vehicle::_readMessage()
     }
     while (avail--)
     {
-        int result = Serial.read();
+        int result = MAVESP8266_VEHICLE_SERIAL.read();
         if (result >= 0)
         {
             // Parsing

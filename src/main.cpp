@@ -136,10 +136,18 @@ void wait_for_client() {
     uint8_t client_count = WiFi.softAPgetStationNum();
     while (!client_count) {
 #ifdef ENABLE_DEBUG
+#if MAVESP8266_USE_USB_CDC_CONSOLE
+        Serial.print(".");
+#else
         Serial1.print(".");
+        Serial.print(".");
+#endif
         if(++wcount > 80) {
             wcount = 0;
+#if !MAVESP8266_USE_USB_CDC_CONSOLE
             Serial1.println();
+#endif
+            Serial.println();
         }
 #endif
         delay(1000);
@@ -156,6 +164,19 @@ void reset_interrupt(){
     ESP.restart();
 }
 
+const char* wifiStatusToString(wl_status_t status) {
+  switch (status) {
+    case WL_IDLE_STATUS:     return "IDLE";
+    case WL_NO_SSID_AVAIL:   return "NO_SSID";
+    case WL_SCAN_COMPLETED:  return "SCAN_DONE";
+    case WL_CONNECTED:       return "CONNECTED";
+    case WL_CONNECT_FAILED:  return "CONNECT_FAILED";
+    case WL_CONNECTION_LOST: return "CONNECTION_LOST";
+    case WL_DISCONNECTED:    return "DISCONNECTED";
+    default:                 return "UNKNOWN";
+  }
+}
+
 //---------------------------------------------------------------------------------
 //-- Set things up
 void setup() {
@@ -164,7 +185,15 @@ void setup() {
 #ifdef ENABLE_DEBUG
     //   We only use it for non debug because GPIO02 is used as a serial
     //   pin (TX) when debugging.
+    Serial.begin(115200);
+#if !MAVESP8266_USE_USB_CDC_CONSOLE
     Serial1.begin(115200);
+#else
+    delay(200);
+#endif
+    //Serial.setRxBufferSize(4096);
+    Serial.println("Starting MavESP8266...");
+    Serial.print("Version: ");
 #else
     //-- Initialized GPIO02 (Used for "Reset To Factory")
     // This seems to cause a reset loop at boot time with the Adafruit HUZZAH
@@ -193,6 +222,12 @@ void setup() {
     WiFi.disconnect(true);
 
     if(Parameters.getWifiMode() == MAVESP8266_WIFI_MODE_CLIENT){
+        DEBUG_LOG("Client Mode - trying to connect to wifi network\n");
+        DEBUG_LOG("STA SSID: %s\n", Parameters.getWifiStaSsid());
+        DEBUG_LOG("STA PASS: %s\n", Parameters.getWifiStaPassword());
+        DEBUG_LOG("STA IP: %s\n", IPAddress(Parameters.getWifiStaIP()).toString().c_str());
+        DEBUG_LOG("STA GW: %s\n", IPAddress(Parameters.getWifiStaGateway()).toString().c_str());
+        DEBUG_LOG("STA SN: %s\n", IPAddress(Parameters.getWifiStaSubnet()).toString().c_str());
         //-- Connect to an existing network
         WiFi.mode(WIFI_STA);
         WiFi.config(Parameters.getWifiStaIP(), Parameters.getWifiStaGateway(), Parameters.getWifiStaSubnet(), IPAddress((uint32_t)0), IPAddress((uint32_t)0));
@@ -201,15 +236,24 @@ void setup() {
         //-- Wait a minute to connect
         for(int i = 0; i < 2 * WIFI_CLIENT_TIMEOUT && WiFi.status() != WL_CONNECTED; i++) {
             #ifdef ENABLE_DEBUG
+#if MAVESP8266_USE_USB_CDC_CONSOLE
             Serial.print(".");
+#else
+            Serial1.print(".");
+            Serial.print(".");
+#endif
+            DEBUG_LOG("s:%s", wifiStatusToString(WiFi.status()));
             #endif
             delay(500);
         }
+        DEBUG_LOG("\nExited Connect Loop with status:%s", wifiStatusToString(WiFi.status()));
         if(WiFi.status() == WL_CONNECTED) {
+            DEBUG_LOG("Connected to router!\n");
             localIP = WiFi.localIP();
             subnetMask = WiFi.subnetMask();
             WiFi.setAutoReconnect(true);
         } else {
+            DEBUG_LOG("Fallback to AP mode\n");
             //-- Fall back to AP mode if no connection could be established
             WiFi.disconnect(true);
             Parameters.setWifiMode(MAVESP8266_WIFI_MODE_AP);
@@ -217,6 +261,7 @@ void setup() {
     }
 
     if(Parameters.getWifiMode() == MAVESP8266_WIFI_MODE_AP){
+        DEBUG_LOG("Access Point Mode - trying to create a wifi network\n");
         //-- Start AP
         WiFi.mode(WIFI_AP);
 #if MAVESP8266_IS_ESP32

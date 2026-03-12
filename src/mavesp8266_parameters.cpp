@@ -216,16 +216,23 @@ MavESP8266Parameters::loadAllFromEeprom()
             Serial1.print("Loading from EEPROM: ");
             Serial1.print(mavParameters[i].id);
             Serial1.print(" Value: ");
+            Serial.print("Loading from EEPROM: ");
+            Serial.print(mavParameters[i].id);
+            Serial.print(" Value: ");
             if(mavParameters[i].type == MAV_PARAM_TYPE_UINT32)
                 Serial1.println(*((uint32_t*)mavParameters[i].value));
+                Serial.println(*((uint32_t*)mavParameters[i].value));
             else if(mavParameters[i].type == MAV_PARAM_TYPE_UINT16)
                 Serial1.println(*((uint16_t*)mavParameters[i].value));
+                Serial.println(*((uint16_t*)mavParameters[i].value));
             else
                 Serial1.println(*((int8_t*)mavParameters[i].value));
+                Serial.println(*((int8_t*)mavParameters[i].value));
         #endif
     }
     #ifdef DEBUG
         Serial1.println("");
+        Serial.println("");
     #endif
     //-- Version if hardwired
     _sw_version = MAVESP8266_VERSION;
@@ -269,12 +276,18 @@ MavESP8266Parameters::saveAllToEeprom()
             Serial1.print("Saving to EEPROM: ");
             Serial1.print(mavParameters[i].id);
             Serial1.print(" Value: ");
+            Serial.print("Saving to EEPROM: ");
+            Serial.print(mavParameters[i].id);
+            Serial.print(" Value: ");
             if(mavParameters[i].type == MAV_PARAM_TYPE_UINT32)
                 Serial1.println(*((uint32_t*)mavParameters[i].value));
+                Serial.println(*((uint32_t*)mavParameters[i].value));
             else if(mavParameters[i].type == MAV_PARAM_TYPE_UINT16)
                 Serial1.println(*((uint16_t*)mavParameters[i].value));
+                Serial.println(*((uint16_t*)mavParameters[i].value));
             else
                 Serial1.println(*((int8_t*)mavParameters[i].value));
+                Serial.println(*((int8_t*)mavParameters[i].value));
         #endif
         for(int j = 0; j < mavParameters[i].length; j++, address++, ptr++) {
             EEPROM.write(address, *ptr);
@@ -287,6 +300,9 @@ MavESP8266Parameters::saveAllToEeprom()
         Serial1.print("Saved CRC: ");
         Serial1.print(saved_crc);
         Serial1.println("");
+        Serial.print("Saved CRC: ");
+        Serial.print(saved_crc);
+        Serial.println("");
     #endif
 }
 
@@ -335,6 +351,10 @@ MavESP8266Parameters::_initEeprom()
             Serial1.print(saved_crc);
             Serial1.print(" Current: ");
             Serial1.println(current_crc);
+            Serial.print("Initializing EEPROM. Saved: ");
+            Serial.print(saved_crc);
+            Serial.print(" Current: ");
+            Serial.println(current_crc);
         #endif
         //-- Set all defaults
         resetToDefaults();

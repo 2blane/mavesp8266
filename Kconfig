@@ -1,6 +1,6 @@
 config DEFAULT_UART_SPEED
     int "Default UART speed"
-    default 921600
+    default 115200
     range 9600 921600
     help
       Default baud rate of the UART leading to the flight controller
@@ -52,13 +52,13 @@ config DEFAULT_WIFI_AP_PASSWORD
 
 config DEFAULT_WIFI_CLIENT_SSID
     string "SSID (client mode)"
-    default "Skybrush"
+    default "StarBase"
     help
       SSID of the wifi network to connect to when the device is in client mode
 
 config DEFAULT_WIFI_CLIENT_PASSWORD
     string "Password (client mode)"
-    default "skybrush"
+    default "Starbies"
     help
       Password of the wifi network to connect to when the device is in client
       mode
