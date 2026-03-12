@@ -40,6 +40,8 @@
 #include "mavesp8266_parameters.h"
 #include "mavesp8266_component.h"
 
+bool g_vehicle_serial_initialized = false;
+
 //---------------------------------------------------------------------------------
 MavESP8266Vehicle::MavESP8266Vehicle()
 {
@@ -63,9 +65,11 @@ MavESP8266Vehicle::begin(MavESP8266Bridge* forwardTo, IPAddress ownIP, uint8_t s
     #ifdef ENABLE_DEBUG
     #if MAVESP8266_USE_USB_CDC_CONSOLE
         MAVESP8266_VEHICLE_SERIAL.begin(getWorld()->getParameters()->getUartBaudRate());
+        g_vehicle_serial_initialized = true;
     #endif
     #else
         MAVESP8266_VEHICLE_SERIAL.begin(getWorld()->getParameters()->getUartBaudRate());
+        g_vehicle_serial_initialized = true;
     #endif
     //-- Swap to TXD2/RXD2 (GPIO015/GPIO013) For ESP12 Only
 #ifdef ENABLE_DEBUG

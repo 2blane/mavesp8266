@@ -107,10 +107,15 @@ MavESP8266Log::log(const char *format, ...) {
     char temp[1024];
     size_t len = vsnprintf(temp, 1024, format, arg);
 #ifdef ENABLE_DEBUG
-#if !MAVESP8266_USE_USB_CDC_CONSOLE
-    Serial1.print(temp);
-#endif
+    MAVESP8266_DEBUG_SERIAL.print(temp);
+#if MAVESP8266_LOG_TO_USB_CDC
     Serial.print(temp);
+#endif
+#if MAVESP8266_LOG_TO_VEHICLE_UART
+    if (g_vehicle_serial_initialized) {
+        MAVESP8266_VEHICLE_SERIAL.print(temp);
+    }
+#endif
 #endif
 
     if(_buffer) {
