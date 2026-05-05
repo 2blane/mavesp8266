@@ -52,6 +52,9 @@ public:
     int     sendMessageRaw   (uint8_t *buffer, int len);
     linkStatus* getStatus   ();
     bool    isArmed         ();
+    uint32_t getUartBytesRead() const { return _uart_bytes_read; }
+    uint32_t getUartBytesWritten() const { return _uart_bytes_written; }
+    int32_t  getLastMsgId() const { return _last_msg_id; }
 
 private:
     void    _generateFakeHeartbeat();
@@ -65,6 +68,9 @@ private:
     mavlink_message_t       _msg;
     mavlink_message_t       _last_heartbeat_msg;
     uint32_t                _last_fake_heartbeat_sent_at;
+    uint32_t                _uart_bytes_read;
+    uint32_t                _uart_bytes_written;
+    int32_t                 _last_msg_id;
 };
 
 #endif

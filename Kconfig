@@ -1,6 +1,6 @@
 config DEFAULT_UART_SPEED
     int "Default UART speed"
-    default 115200
+    default 921600
     range 9600 921600
     help
       Default baud rate of the UART leading to the flight controller

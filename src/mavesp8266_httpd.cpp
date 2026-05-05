@@ -535,6 +535,20 @@ static void handle_getStatus()
     message += "<tr><td>RAM Left</td><td>";
     message += String(ESP.getFreeHeap());
     message += "</td></tr>\n";
+    message += "<tr><td>Vehicle UART Bytes RX</td><td>";
+    message += String(getWorld()->getVehicle()->getUartBytesRead());
+    message += "</td></tr>\n";
+    message += "<tr><td>Vehicle UART Bytes TX</td><td>";
+    message += String(getWorld()->getVehicle()->getUartBytesWritten());
+    message += "</td></tr>\n";
+    message += "<tr><td>Vehicle Last Msg ID</td><td>";
+    const int32_t lastVehicleMsgId = getWorld()->getVehicle()->getLastMsgId();
+    if (lastVehicleMsgId >= 0) {
+        message += String(lastVehicleMsgId);
+    } else {
+        message += "none";
+    }
+    message += "</td></tr>\n";
     message += "<tr><td>Parameters CRC</td><td>";
     message += paramCRC;
     message += "</td></tr>\n";

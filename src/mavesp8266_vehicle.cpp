@@ -40,7 +40,14 @@
 #include "mavesp8266_parameters.h"
 #include "mavesp8266_component.h"
 
-bool g_vehicle_serial_initialized = false;
+#if MAVESP8266_IS_ESP32
+#  ifndef MAVESP8266_VEHICLE_UART_TX_PIN
+#    define MAVESP8266_VEHICLE_UART_TX_PIN 39
+#  endif
+#  ifndef MAVESP8266_VEHICLE_UART_RX_PIN
+#    define MAVESP8266_VEHICLE_UART_RX_PIN 40
+#  endif
+#endif
 
 //---------------------------------------------------------------------------------
 MavESP8266Vehicle::MavESP8266Vehicle()
@@ -48,6 +55,9 @@ MavESP8266Vehicle::MavESP8266Vehicle()
     _recv_chan = MAVLINK_COMM_0;
     _send_chan = MAVLINK_COMM_1;
     _last_fake_heartbeat_sent_at = millis();
+    _uart_bytes_read = 0;
+    _uart_bytes_written = 0;
+    _last_msg_id = -1;
     memset(&_last_heartbeat_msg, 0, sizeof(_last_heartbeat_msg));
 }
 
@@ -64,12 +74,14 @@ MavESP8266Vehicle::begin(MavESP8266Bridge* forwardTo, IPAddress ownIP, uint8_t s
     //-- Start UART connected to UAS
     #ifdef ENABLE_DEBUG
     #if MAVESP8266_USE_USB_CDC_CONSOLE
+#if MAVESP8266_IS_ESP32
+        MAVESP8266_VEHICLE_SERIAL.begin(getWorld()->getParameters()->getUartBaudRate(), SERIAL_8N1, MAVESP8266_VEHICLE_UART_RX_PIN, MAVESP8266_VEHICLE_UART_TX_PIN);
+#else
         MAVESP8266_VEHICLE_SERIAL.begin(getWorld()->getParameters()->getUartBaudRate());
-        g_vehicle_serial_initialized = true;
+#endif
     #endif
     #else
         MAVESP8266_VEHICLE_SERIAL.begin(getWorld()->getParameters()->getUartBaudRate());
-        g_vehicle_serial_initialized = true;
     #endif
     //-- Swap to TXD2/RXD2 (GPIO015/GPIO013) For ESP12 Only
 #ifdef ENABLE_DEBUG
@@ -116,6 +128,7 @@ MavESP8266Vehicle::readMessageRaw() {
         int result = MAVESP8266_VEHICLE_SERIAL.read();
         if (result >= 0)
         {
+            _uart_bytes_read++;
             buf[buf_index] = result;
             buf_index++;
         }
@@ -139,6 +152,7 @@ MavESP8266Vehicle::sendMessage(mavlink_message_t* message) {
         delay(1);
     }
     MAVESP8266_VEHICLE_SERIAL.write((uint8_t*)(void*)buf, len);
+    _uart_bytes_written += len;
     _status.packets_sent++;
     return 1;
 }
@@ -146,6 +160,9 @@ MavESP8266Vehicle::sendMessage(mavlink_message_t* message) {
 int
 MavESP8266Vehicle::sendMessageRaw(uint8_t *buffer, int len) {
     MAVESP8266_VEHICLE_SERIAL.write(buffer, len);
+    if (len > 0) {
+        _uart_bytes_written += (uint32_t)len;
+    }
     //Serial.flush();
     return len;
 }
@@ -185,6 +202,7 @@ MavESP8266Vehicle::_readMessage()
         int result = MAVESP8266_VEHICLE_SERIAL.read();
         if (result >= 0)
         {
+            _uart_bytes_read++;
             // Parsing
             uint8_t last_parse_error = _rxstatus.parse_error;
             msgReceived = mavlink_frame_char_buffer(&_rxmsg,
@@ -198,6 +216,7 @@ MavESP8266Vehicle::_readMessage()
             }
             if (msgReceived != MAVLINK_FRAMING_INCOMPLETE) {
                 _status.packets_received++;
+                _last_msg_id = _msg.msgid;
                 //-- Is this the first packet we got?
                 if(!_heard_from) {
                     if(_msg.msgid == MAVLINK_MSG_ID_HEARTBEAT) {

@@ -136,16 +136,18 @@ void wait_for_client() {
     uint8_t client_count = WiFi.softAPgetStationNum();
     while (!client_count) {
 #ifdef ENABLE_DEBUG
-        MAVESP8266_DEBUG_SERIAL.print(".");
-#if MAVESP8266_LOG_TO_USB_CDC
+#if MAVESP8266_USE_USB_CDC_CONSOLE
+    Serial.print(".");
+#else
+    Serial1.print(".");
     Serial.print(".");
 #endif
         if(++wcount > 80) {
             wcount = 0;
-            MAVESP8266_DEBUG_SERIAL.println();
-#if MAVESP8266_LOG_TO_USB_CDC
-        Serial.println();
+#if !MAVESP8266_USE_USB_CDC_CONSOLE
+        Serial1.println();
 #endif
+        Serial.println();
         }
 #endif
         delay(1000);
@@ -181,27 +183,17 @@ void setup() {
     delay(1000);
     Parameters.begin();
 #ifdef ENABLE_DEBUG
-    // Keep debug logs on a dedicated UART on ESP32-S3 so USB mode does not affect logging.
-#if MAVESP8266_IS_ESP32
-    MAVESP8266_DEBUG_SERIAL.begin(115200, SERIAL_8N1, MAVESP8266_LOG_UART_RX_PIN, MAVESP8266_LOG_UART_TX_PIN);
-#else
-    MAVESP8266_DEBUG_SERIAL.begin(115200);
-#endif
-#if MAVESP8266_LOG_TO_VEHICLE_UART
-    MAVESP8266_VEHICLE_SERIAL.begin(getWorld()->getParameters()->getUartBaudRate());
-    g_vehicle_serial_initialized = true;
-#endif
-    MAVESP8266_DEBUG_SERIAL.println("Starting MavESP8266...");
-    MAVESP8266_DEBUG_SERIAL.print("Version: ");
-#if MAVESP8266_LOG_TO_USB_CDC
+    //   We only use it for non debug because GPIO02 is used as a serial
+    //   pin (TX) when debugging.
     Serial.begin(115200);
+#if !MAVESP8266_USE_USB_CDC_CONSOLE
+    Serial1.begin(115200);
+#else
+    delay(200);
+#endif
+    //Serial.setRxBufferSize(4096);
     Serial.println("Starting MavESP8266...");
     Serial.print("Version: ");
-#endif
-#if MAVESP8266_LOG_TO_VEHICLE_UART
-    MAVESP8266_VEHICLE_SERIAL.println("Starting MavESP8266...");
-    MAVESP8266_VEHICLE_SERIAL.print("Version: ");
-#endif
 #else
     //-- Initialized GPIO02 (Used for "Reset To Factory")
     // This seems to cause a reset loop at boot time with the Adafruit HUZZAH
@@ -244,10 +236,12 @@ void setup() {
         //-- Wait a minute to connect
         for(int i = 0; i < 2 * WIFI_CLIENT_TIMEOUT && WiFi.status() != WL_CONNECTED; i++) {
             #ifdef ENABLE_DEBUG
-            MAVESP8266_DEBUG_SERIAL.print(".");
-#if MAVESP8266_LOG_TO_USB_CDC
+ #if MAVESP8266_USE_USB_CDC_CONSOLE
             Serial.print(".");
-#endif
+ #else
+            Serial1.print(".");
+            Serial.print(".");
+ #endif
             DEBUG_LOG("s:%s", wifiStatusToString(WiFi.status()));
             #endif
             delay(500);

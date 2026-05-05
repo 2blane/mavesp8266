@@ -101,6 +101,5 @@
 #ifdef CONFIG_ENABLE_DEBUG
 #  define ENABLE_DEBUG
 #endif
-#define ENABLE_DEBUG
 
 #endif   // MAVESP8266_CONFIG_H

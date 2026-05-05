@@ -66,34 +66,6 @@ extern "C" {
 #  define MAVESP8266_VEHICLE_SERIAL Serial
 #endif
 
-#if MAVESP8266_IS_ESP32
-#  ifndef MAVESP8266_LOG_UART_TX_PIN
-#    define MAVESP8266_LOG_UART_TX_PIN 39
-#  endif
-#  ifndef MAVESP8266_LOG_UART_RX_PIN
-#    define MAVESP8266_LOG_UART_RX_PIN 40
-#  endif
-#  ifndef MAVESP8266_LOG_DUAL_OUTPUT
-#    define MAVESP8266_LOG_DUAL_OUTPUT 0
-#  endif
-#  ifndef MAVESP8266_LOG_TO_VEHICLE_UART
-#    define MAVESP8266_LOG_TO_VEHICLE_UART 0
-#  endif
-#  define MAVESP8266_DEBUG_SERIAL Serial1
-#else
-#  ifndef MAVESP8266_LOG_DUAL_OUTPUT
-#    define MAVESP8266_LOG_DUAL_OUTPUT 0
-#  endif
-#  ifndef MAVESP8266_LOG_TO_VEHICLE_UART
-#    define MAVESP8266_LOG_TO_VEHICLE_UART 0
-#  endif
-#  define MAVESP8266_DEBUG_SERIAL Serial1
-#endif
-
-#define MAVESP8266_LOG_TO_USB_CDC (MAVESP8266_USE_USB_CDC_CONSOLE && MAVESP8266_LOG_DUAL_OUTPUT)
-
-extern bool g_vehicle_serial_initialized;
-
 class MavESP8266Parameters;
 class MavESP8266Component;
 class MavESP8266Vehicle;
